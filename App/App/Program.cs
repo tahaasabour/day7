@@ -12,33 +12,47 @@ public class Program
                 = new SqlConnection(ConfigurationManager.ConnectionStrings["POSBD"].ToString()))
         {
             SqlCommand cmd = con.CreateCommand();
-            cmd.CommandType = CommandType.Text;
-            cmd.CommandText = "select * from Customer; select count(ID) from Customer";
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = @"sp_add_cutomer_with_orders";
             if (con.State != ConnectionState.Open)
                 con.Open();
 
-            SqlDataReader reader = cmd.ExecuteReader();
-            if (!reader.HasRows)
-                Console.WriteLine("No Customers");
-            else
+            cmd.Parameters.AddWithValue("@name", "Soliman");
+            cmd.Parameters.AddWithValue("@mobile", "9998898");
+
+            DataTable dt = new DataTable();
+            dt.Columns.Add("Price", typeof(float));
+            dt.Columns.Add("Date", typeof(DateTime));
+
+            dt.Rows.Add(300, DateTime.Now);
+            dt.Rows.Add(500, DateTime.Now);
+
+            SqlParameter P = new SqlParameter();
+            P.ParameterName = "@orders";
+            P.SqlDbType = SqlDbType.Structured;
+            P.Value = dt;
+
+            cmd.Parameters.Add(P);
+
+
+            SqlTransaction trans =   con.BeginTransaction();
+
+            try
             {
-                while (reader.Read())
-                {
-                    Console.WriteLine($"ID: {((int)reader[0]).ToString()}, " +
-                        $"  Name: {((string)reader[1]).ToString()}, " +
-                        $"Mobile: {((string)reader[2]).ToString()}");
-                }
-
-                reader.NextResult();
-
-                while (reader.Read())
-                {
-                    Console.WriteLine($"Count {(int)reader[0]}");
-                }
-
+                cmd.Transaction = trans;
+                cmd.ExecuteNonQuery();
+                trans.Commit();
+            }
+            catch 
+            {
+                trans.Rollback();
             }
 
 
+
+
+         
+            con.Close();
         }
         Console.ReadKey();
     }
