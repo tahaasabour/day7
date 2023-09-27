@@ -13,46 +13,26 @@ public class Program
         {
             SqlCommand cmd = con.CreateCommand();
             cmd.CommandType = CommandType.StoredProcedure;
-            cmd.CommandText = @"sp_add_cutomer_with_orders";
-            if (con.State != ConnectionState.Open)
-                con.Open();
+            cmd.CommandText = @"sp_get_customers";
 
-            cmd.Parameters.AddWithValue("@name", "Soliman");
-            cmd.Parameters.AddWithValue("@mobile", "9998898");
-
+            SqlDataAdapter adapter = new SqlDataAdapter(cmd);
             DataTable dt = new DataTable();
-            dt.Columns.Add("Price", typeof(float));
-            dt.Columns.Add("Date", typeof(DateTime));
+            adapter.Fill(dt);
 
-            dt.Rows.Add(300, DateTime.Now);
-            dt.Rows.Add(500, DateTime.Now);
+            foreach (DataRow row in dt.Rows)
+                Console.WriteLine($"ID: {row[0].ToString()}, Name: {row[1].ToString()}");
 
-            SqlParameter P = new SqlParameter();
-            P.ParameterName = "@orders";
-            P.SqlDbType = SqlDbType.Structured;
-            P.Value = dt;
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine();
 
-            cmd.Parameters.Add(P);
+            DataRow selectedRow = dt.Rows[0];
+            selectedRow.Delete();
 
-
-            SqlTransaction trans =   con.BeginTransaction();
-
-            try
-            {
-                cmd.Transaction = trans;
-                cmd.ExecuteNonQuery();
-                trans.Commit();
-            }
-            catch 
-            {
-                trans.Rollback();
-            }
+            SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
+            adapter.Update(dt);
 
 
-
-
-         
-            con.Close();
         }
         Console.ReadKey();
     }
